@@ -66,7 +66,6 @@ MongoClient.connect(mdbUrl, function(err, database) {
             create_date: req.body.create_date,
             update_date: req.body.update_date
         };
-
         db.collection('companies')
           .save(dataToSave, function(err, company) {
             if (err) {
