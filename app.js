@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 
 var index = require('./routes/index');
 var users = require('./routes/users');
+var update = require ('./routes/update');
 
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectId;
@@ -39,6 +40,7 @@ MongoClient.connect(mdbUrl, function(err, database) {
 	app.use(express.static(path.join(__dirname, 'public')));
 
 	app.use('/', index);
+    app.use('/update', update);
     	
 	app.get('/companies', function(req, res) {
 		var companiesCollection = db.collection('companies');
@@ -48,24 +50,22 @@ MongoClient.connect(mdbUrl, function(err, database) {
             companies: companies
           });
         })
-
     });
 
     app.post('/companies', function(req, res) {
         console.log(req.body);
         var dataToSave = {
-        company_name: req.body.company_name,
-        stock_symbol: req.body.stock_symbol,
-        sector: req.body.sector,
-        subsector: req.body.subsector,
-        listing_date: req.body.listing_date,
-        company_website: req.body.company_website,
-        current_CEO: req.body.current_CEO,
-        CompanyLogo_link: req.body.CompanyLogo_link,
-        create_date: req.body.create_date,
-        update_date: req.body.update_date
+            company_name: req.body.company_name,
+            stock_symbol: req.body.stock_symbol,
+            sector: req.body.sector,
+            subsector: req.body.subsector,
+            listing_date: req.body.listing_date,
+            company_website: req.body.company_website,
+            current_CEO: req.body.current_CEO,
+            CompanyLogo_link: req.body.CompanyLogo_link,
+            create_date: req.body.create_date,
+            update_date: req.body.update_date
         };
-
 
         db.collection('companies')
           .save(dataToSave, function(err, company) {
@@ -78,33 +78,7 @@ MongoClient.connect(mdbUrl, function(err, database) {
         })
     });
 
-    app.post('/update', function(req, res) {
-        console.log(req.body);
-        var dataToUpdate = {
-        company_name: req.body.company_name,
-        stock_symbol: req.body.stock_symbol,
-        sector: req.body.sector,
-        subsector: req.body.subsector,
-        listing_date: req.body.listing_date,
-        company_website: req.body.company_website,
-        current_CEO: req.body.current_CEO,
-        CompanyLogo_link: req.body.CompanyLogo_link,
-        create_date: req.body.create_date,
-        update_date: req.body.update_date
-        };
-        
-        mongo.connect(url, function(err,db){
-            assert.equal(null, err);
-            companyCollection.updateOne({ _id: new ObjectId(companyId) }, function(err, company) {
-            assert.equal(null, err);
-            res.render('company', {
-                company: company
-            });
-            db.close();
-        }
-    });
-
-	app.get('/company/:companyId', function(req, res) {
+    app.get('/company/:companyId', function(req, res) {
         var companyId = req.params.companyId;
         var companyCollection = db.collection('companies');
         companyCollection.findOne({ _id: new ObjectId(companyId) }, function(err, company) {
@@ -114,6 +88,51 @@ MongoClient.connect(mdbUrl, function(err, database) {
         });
     });
 
+    app.get('/company/:companyId/update', function(req, res) { 
+        var companyId = req.params.companyId;
+        var companyCollection = db.collection('companies');
+        companyCollection.findOne({ _id: new ObjectId(companyId) }, function(err, company) {
+            res.render('update', {
+                update: company
+            });
+        });
+    });
+
+    app.post('/company/:companyId/update', function(req, res) {
+        var companyId = req.params.companyId;
+        var companyCollection = db.collection('companies');
+        var dataToSave = {
+            company_name: req.body.company_name,
+            stock_symbol: req.body.stock_symbol,
+            sector: req.body.sector,
+            subsector: req.body.subsector,
+            listing_date: req.body.listing_date,
+            company_website: req.body.company_website,
+            current_CEO: req.body.current_CEO,
+            CompanyLogo_link: req.body.CompanyLogo_link,
+            create_date: req.body.create_date,
+            update_date: req.body.update_date
+        };
+        companyCollection.updateOne({ _id: new ObjectId(companyId)}, {$set: dataToSave}, function(err, company) {
+            if(err){
+            return console.log(err)
+            }
+            console.log("Successful Update!");
+            res.redirect('/company/'+companyId) 
+        });
+    });
+
+    app.get('/company/:companyId/delete', function(req, res) {
+        var companyId = req.params.companyId;
+        var companyCollection = db.collection('companies');
+        companyCollection.deleteOne({ _id: new ObjectId(companyId)}, function(err, company) {
+            if(err){
+            return console.log(err)
+            }
+            console.log("Deletion Successful!");
+            res.redirect('/companies/')   
+        });
+    });
     // catch 404 and forward to error handler
 	app.use(function(req, res, next) {
  	 var err = new Error('Not Found');
